@@ -37,6 +37,7 @@ def main():
     ax.scatter(x, y, c=[xx-yy for xx,yy in zip(x,y)], cmap='spring', s=5)
 
     # change background color
+
     ax.set_facecolor('#000000')
 
     # set title, family and fontsize are parsed to **kwargs : Text properties
@@ -67,8 +68,8 @@ def main():
     ax.margins(x=0.005, y=0.005)
 
     # dynamic formatting of filename
-    fp = f"{'_'.join(song_name.split())}_BY_{'_'.join(artist_name.split())}_example.png"
-
+    fp = f"{'_'.join(song_name.split())}_BY_{'_'.join(artist_name.split())}_testing.png"
+    
     # bbox_inches='tight' removes the whitespace when saving to file
     fig.savefig(fp, bbox_inches='tight')
 
