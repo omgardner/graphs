@@ -1,10 +1,10 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import seaborn as sns
 import cv2
 from glob import glob
 
 def sector_mask(shape,centre,radius,angle_range):
+    print(shape, centre, radius, angle_range)
     # I HAVE TODO THIS MYSELF... i will not understand otherwaise
 
     """
@@ -16,7 +16,6 @@ def sector_mask(shape,centre,radius,angle_range):
     x,y = np.ogrid[:shape[0],:shape[1]]
     cx,cy = centre
     tmin,tmax = np.deg2rad(angle_range)
-    print(angle_range)
     # ensure stop angle > start angle
     if tmax < tmin:
         tmax += 2*np.pi
@@ -87,11 +86,12 @@ def main():
 
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     video = cv2.VideoWriter('data/test/video.mp4', fourcc, FPS, VIDEO_SHAPE, 1)
+    print("shape, centre, radius, angle_range")
     for offset in range(0, 360, 45):
         frame = cv2.resize(create_frame(img_matrices, offset), VIDEO_SHAPE)
         
         cv2.imwrite(f"data/test/res/{offset}.png", frame)
-        video.write(cv2.resize(create_frame(img_matrices, offset), VIDEO_SHAPE))
+        #video.write(cv2.resize(create_frame(img_matrices, offset), VIDEO_SHAPE))
         print(f"Frame created for offset {offset} degrees.")
         
     video.release()
