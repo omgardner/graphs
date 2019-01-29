@@ -46,14 +46,15 @@ def gen_start_angle_ranges(n):
 from matplotlib import pyplot as plt
 import seaborn as sns
 import cv2
-
 from glob import glob
-filepaths = glob("data/*.png")
+
+filepaths = glob("data/test/*.png")
 
 n = len(filepaths)
-fig, axes = plt.subplots(1,n)
+fig, ax = plt.subplots()
 
-for ax, fp, angle_range in zip(axes, filepaths, gen_start_angle_ranges(n)):
+main_matrix = None
+for fp, angle_range in zip(filepaths, gen_start_angle_ranges(n)):
     # individual masked image sector
     matrix = cv2.imread(fp)
     width, height = matrix.shape[:2]
@@ -61,12 +62,15 @@ for ax, fp, angle_range in zip(axes, filepaths, gen_start_angle_ranges(n)):
     mask = sector_mask(matrix.shape, (width//2, height//2), width//2, angle_range)
     matrix[~mask] = 0
 
-
-
-    # plot
-    ax.imshow(matrix) # test
-    sns.despine(ax=ax, left=True, bottom=True)
-    ax.set_yticks([])
-    ax.set_xticks([])
-
+    if main_matrix is None:
+        main_matrix = matrix
+    else:
+        # not checked for efficiency. is this index based?
+        main_matrix = np.where(main_matrix != 0, main_matrix, matrix)
+    
+# plot
+ax.imshow(main_matrix) # test
+sns.despine(ax=ax, left=True, bottom=True)
+ax.set_yticks([])
+ax.set_xticks([])
 plt.show()
