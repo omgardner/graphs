@@ -37,7 +37,7 @@ def sector_mask(shape,centre,radius,angle_range):
 def gen_start_angle_ranges(n):
     # asign equal angle range to each file via generator
     # `offset` rotates all angle ranges by `offset` degrees
-    # lots of modulo, TODO check if removal is necessary
+    # module not necessary as it is handled in the sector masking already (2π == 4π == 6π == ...)
     angle = 360 / n
     for i in range(n-1):
         yield angle*i, angle*(i+1)
@@ -47,46 +47,70 @@ def gen_start_angle_ranges(n):
         yield angle*(n-1), 360
 
 
-def create_frame(img_matrices, offset):
+def create_frame(img_matrices, offset, mask_kwargs):
+    """ return the complete frame with sector sections
+    img_matrices: 
+        numpy matrices representing images to sectorise
+    offset:
+        rotation offset of images by `offset` degrees
+    mask_kwargs:
+        kwargs dict for sector_mask function
+    """
     n = len(img_matrices)
     full_matrix = None
 
     angle_ranges = [(a+offset, b+offset)  for a,b in gen_start_angle_ranges(n)]
     
-    for i, (matrix, angle_range) in enumerate(zip(img_matrices, angle_ranges)):
+    for matrix, angle_range in zip(img_matrices, angle_ranges):
         
         # individual masked image sector
         width, height = matrix.shape[:2]
         # radius is width // 2. This is an assumption that height ~= width, radius ~= width
-        mask = sector_mask(matrix.shape, (width//2, height//2), width//2, angle_range)
+        mask = sector_mask(angle_range=angle_range, **mask_kwargs)
         matrix[~mask] = 0
+        # add to complete image matrix
         if full_matrix is None:
             full_matrix = matrix
         else:
             # not checked for efficiency. is this index based?
-            full_matrix = np.where(matrix == 0, full_matrix, matrix)
+            full_matrix = np.where(full_matrix != 0, full_matrix, matrix)
 
     # TEMPORARY INVERSION until i debug...
-    return cv2.bitwise_not(full_matrix) # uninvert image... WHERE DID IT BECOME INVERTED????
+    return full_matrix # cv2.bitwise_not(full_matrix) # uninvert image... sometimes
 
 
 
 def main():
-    filepaths = glob("data/test/*.png")
 
-    FPS = 10
-    ROTATION_PER_FRAME = 0.5
+    DIRPATH = "data/test"
+    # get all images with png or jpg file extension
+    filepaths = glob(f"{DIRPATH}/*.png")
+    print(filepaths)
+
+    FPS = 24
+    ROTATION_PER_FRAME = 5
     VIDEO_SHAPE = (640,640)
-    
+    W,H = VIDEO_SHAPE
+
+    mask_kwargs = {
+        "shape": VIDEO_SHAPE,
+        "centre": (W//2, H//2),
+        "radius": int(3*max(VIDEO_SHAPE)/4) # 3/4 of height
+    }
+
     # init video for mp4, using correct fourcc code
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    video = cv2.VideoWriter('data/test/video.mp4', fourcc, FPS, VIDEO_SHAPE, 1)
+    video = cv2.VideoWriter(f'{DIRPATH}/video.mp4', fourcc, FPS, VIDEO_SHAPE, 1)
+
+    # init images
+    images = [cv2.resize(cv2.imread(fp), VIDEO_SHAPE) for fp in filepaths]
+    print(f"{len(images)} images loaded, resized to ({W}px, {H}px).")
 
     # iterate through different offsets, to rotate each sector over the video
     for offset in np.arange(0, 360+ROTATION_PER_FRAME, ROTATION_PER_FRAME):
-        # create the frame full of sectors. it loads the images every time to avoid weird graphical glitches.
-        frame = cv2.resize(create_frame([cv2.imread(fp) for fp in filepaths], offset), VIDEO_SHAPE)
-        
+        # create the frame full of sectors. it copies the images every time to avoid weird graphical glitches.
+        frame = create_frame([img.copy() for img in images], offset, mask_kwargs)
+        #cv2.imshow(frame, 0)
         # cv2.imwrite(f"data/test/res/{offset}.png", frame)
         video.write(frame)
         print(f"Frame created for offset {offset} degrees.")
