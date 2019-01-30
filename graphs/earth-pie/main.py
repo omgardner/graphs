@@ -4,8 +4,6 @@ import cv2
 from glob import glob
 
 def sector_mask(shape,centre,radius,angle_range):
-    print(shape, centre, radius, angle_range)
-    # I HAVE TODO THIS MYSELF... i will not understand otherwaise
 
     """
     Return a boolean mask for a circular sector. The start/stop angles in  
@@ -30,9 +28,6 @@ def sector_mask(shape,centre,radius,angle_range):
     # circular mask
     circmask = r2 <= radius*radius
 
-    #THIS IS A PROBLEM.. 
-    # likely anglemask or theta has the wrong value?
-    # what changes in a loop?
     # angular mask
     anglemask = theta <= (tmax-tmin)
 
@@ -78,20 +73,22 @@ def create_frame(img_matrices, offset):
 
 def main():
     filepaths = glob("data/test/*.png")
-    # avoids reloading the image from fp every loop
-    img_matrices = [cv2.imread(fp) for fp in filepaths]
 
-    FPS = 4
+    FPS = 10
+    ROTATION_PER_FRAME = 0.5
     VIDEO_SHAPE = (640,640)
-
+    
+    # init video for mp4, using correct fourcc code
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     video = cv2.VideoWriter('data/test/video.mp4', fourcc, FPS, VIDEO_SHAPE, 1)
-    print("shape, centre, radius, angle_range")
-    for offset in range(0, 360, 45):
-        frame = cv2.resize(create_frame(img_matrices, offset), VIDEO_SHAPE)
+
+    # iterate through different offsets, to rotate each sector over the video
+    for offset in np.arange(0, 360+ROTATION_PER_FRAME, ROTATION_PER_FRAME):
+        # create the frame full of sectors. it loads the images every time to avoid weird graphical glitches.
+        frame = cv2.resize(create_frame([cv2.imread(fp) for fp in filepaths], offset), VIDEO_SHAPE)
         
-        cv2.imwrite(f"data/test/res/{offset}.png", frame)
-        #video.write(cv2.resize(create_frame(img_matrices, offset), VIDEO_SHAPE))
+        # cv2.imwrite(f"data/test/res/{offset}.png", frame)
+        video.write(frame)
         print(f"Frame created for offset {offset} degrees.")
         
     video.release()
