@@ -11,7 +11,7 @@ def gen_lyric_points(lyrics):
             if word_target == word:
                 x.append(ix)
                 # flip the vertical axis
-                y.append(n_lyrics - iy)
+                y.append(iy)
     return x,y 
 
 
@@ -26,10 +26,9 @@ def main():
     artist_name = "the beatles"
     
     # create subplot to adjust figsize
-    fig, ax = plt.subplots(figsize=(30,30))
+    fig, ax = plt.subplots(figsize=(10,10))
 
     # x,y lyric repetitions converted to coordinates, based on index position in '2x2 matrix'
-
     lyrics = lyrics.split() # remove this for some wacky stuff
     x,y = gen_lyric_points(lyrics)
 
@@ -37,7 +36,7 @@ def main():
     ax.scatter(x, y, c=[xx-yy for xx,yy in zip(x,y)], cmap='spring', s=5)
 
     # change background color
-
+    fig.set_facecolor('#000000')
     ax.set_facecolor('#000000')
 
     # set title, family and fontsize are parsed to **kwargs : Text properties
@@ -49,13 +48,16 @@ def main():
     # lyrics along y axis
     ax.set_yticklabels(lyrics, family='Calibri')
 
-    # show all lyrics, but reverse existing order so it reads top-to-bottom
-    ax.set_yticks(range(len(lyrics),0,-1))
+    # show all ticks
+    ax.set_yticks(range(len(lyrics)))
+
+    # flip y-axis to show lyrics descending from top left corner to bottom rigt
+    ax.invert_yaxis()
 
     # remove x ticks
-    ax.set_xticklabels([])
+    ax.set_xticks([])
 
-    # hey its me
+    # using x-axis label to annotate my name.
     ax.set_xlabel("omgardner")
 
     # remove grid
@@ -72,6 +74,7 @@ def main():
     
     # bbox_inches='tight' removes the whitespace when saving to file
     fig.savefig(fp, bbox_inches='tight')
+
 
 if __name__ == '__main__':
     main()
